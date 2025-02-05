@@ -47,17 +47,21 @@ void initialize_window(GLFWwindow* &window) {
 
 void create_shader_program(unsigned int &shaderProgram) {
         const char* vertexShaderSource = "#version 330 core\n"
-        "layout (location = 0) in vec3 aPos;\n"
+        "layout (location = 0) in vec3 aPos;\n" // Mandatory Vertex Shader Input (position)
+        "out vec4 vertexColor;\n"  // Optional output to send to another shader 
         "void main()\n"
         "{\n"
         "   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+        "   vertexColor = vec4(0.5, 0.0, 0.0, 1.0);\n"
         "}\0";
 
     const char* fragmentShaderSource = "#version 330 core\n"
-        "out vec4 FragColor;\n"
+        "out vec4 FragColor;\n" // Mandatory Fragment Shader Output (vec4 RGBA)
+        "in vec4 vertexColor;\n" // Taking input from other shaders
+        "uniform vec4 ourColor;\n" // Defining uniform (global variable for all shaders in current ShaderProgram)
         "void main()\n"
         "{\n"
-        "FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+        "FragColor = ourColor;\n"
         "}";
 
     // Shaders
@@ -96,6 +100,8 @@ int main() {
 
     glUseProgram(shaderProgram);
 
+
+
     // Vertex Data and Vertex Buffer Object
 
     float vertices_head[] = {
@@ -130,6 +136,18 @@ int main() {
     0.05f,  -0.5f, 0.0f   // top left 
     };
 
+    float vertices_sky[] = {
+        //triangle 1
+        -1.0f, 1.0f, 0.0f, // top left
+        -1.0f, -1.0f, 0.0f, // bottom left
+        1.0f, -1.0f, 0.0f, //bottom right
+        //triangle 2
+        1.0f, 1.0f, 0.0f, // top right
+        -1.0f, 1.0f, 0.0f, // top left
+        1.0f, -1.0f, 0.0f, //bottom right
+        
+    };
+
     unsigned int leg_indices[] = {  // For Element Buffer Objects (optimize repeating vertices position, for example creating a rectangle out of 2 triangles)
     0, 1, 3,   // first triangle
     1, 2, 3,    // second triangle
@@ -153,6 +171,14 @@ int main() {
     glGenBuffers(1, &EBO_body);
     glGenBuffers(1, &EBO_leg);
 
+    unsigned int VAO_sky;
+    glGenVertexArrays(1, &VAO_sky);
+
+    unsigned int VBO_sky;
+    glGenBuffers(1, &VBO_sky);
+
+ 
+
     // Head
     // ..:: Initialization code (done once (unless your object frequently changes)) :: ..
     // 1. bind Vertex Array Object
@@ -167,6 +193,15 @@ int main() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     
+    // Sky (not being drawn atm)
+    glBindVertexArray(VAO_sky);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO_sky);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices_sky), vertices_sky, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
     // Body
     glBindVertexArray(VAO_body);
 
@@ -197,11 +232,22 @@ int main() {
         processInput(window);
 
         // rendering commands
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+        // Some Kind of Skybox
+        float timeValue = glfwGetTime();
+        float greenValue = (sin(timeValue) / 2.0f) + 0.5f;
+        int vertexColorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+        //glUniform4f(vertexColorLocation, greenValue/2, greenValue, greenValue, 1.0f);
+
+        glClearColor(greenValue/2, greenValue, greenValue, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+  
+
 
         // 4. draw the object
         glUseProgram(shaderProgram);
+
         glBindVertexArray(VAO_head);
         //glDrawArrays(GL_TRIANGLES, 0, 3);
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
