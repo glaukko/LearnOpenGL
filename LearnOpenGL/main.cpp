@@ -89,6 +89,23 @@ void create_shader_program(unsigned int &shaderProgram) {
     glDeleteShader(fragmentShader);
 }
 
+class GameObject {
+public:
+    std::vector<int> vaos;
+    int x;
+    int y;
+
+    GameObject(std::vector<int> a, int b, int c) {
+        vaos = a;
+        x = b;
+        y = c;
+    }
+
+    void render() {
+
+    }
+};
+
 int main() {
     // Create Window
     GLFWwindow* window;
@@ -268,4 +285,52 @@ int main() {
 
     glfwTerminate();
     return 0;
+}
+
+float map(float number, float minNumber, float maxNumber, float minTarget, float maxTarget) {
+    if (minNumber == 0 && maxNumber == 0) { return 0; }
+    float percentageToReduce;
+    const float maxNumberReduce = maxNumber - minNumber;
+    const float maxTargetReduce = maxTarget - minTarget;
+
+    percentageToReduce = number / maxNumber;
+
+    float newNumber = maxTarget - (maxTargetReduce * percentageToReduce);
+
+    return newNumber;
+}
+
+std::vector<float> map_toGL(std::vector<std::vector<int>> coords, GLFWwindow* window) {
+    std::vector<float> gl_coords;
+    
+    int max_width;
+    int max_height;
+
+    for (auto vector3 : coords) {
+        for (int i = 0; i < 3; i++) {
+            int maxVal;
+
+            glfwGetWindowSize(window, &max_width, &max_height);
+
+            switch (i) {
+            case 0:
+                maxVal = max_width;
+                break;
+            case 1:
+                maxVal = max_height;
+                break;
+            case 2:
+                maxVal = 0;
+                break;
+            default:
+                std::cout << "joever\n";
+                break;
+            }
+
+            float newVal = map((float)vector3[i], 0, (float)maxVal, -1.0f, 1.0f);
+            gl_coords.push_back(newVal);
+        }
+    }
+
+    return gl_coords;
 }
